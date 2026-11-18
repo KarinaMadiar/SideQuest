@@ -115,9 +115,11 @@ export async function startGoogleCognitoSignIn(returnTo = '/'): Promise<void> {
   const codeChallenge = await generatePkceChallenge(codeVerifier);
   const state = generateRandomUrlSafeString(24);
 
-  sessionStorage.setItem(PKCE_VERIFIER_KEY, codeVerifier);
-  sessionStorage.setItem(OAUTH_STATE_KEY, state);
-  sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, returnTo);
+  // Keep the one-time OAuth data in localStorage so the callback can read it
+  // even when the provider returns in a fresh tab/window on the same origin.
+  localStorage.setItem(PKCE_VERIFIER_KEY, codeVerifier);
+  localStorage.setItem(OAUTH_STATE_KEY, state);
+  localStorage.setItem(POST_LOGIN_REDIRECT_KEY, returnTo);
 
   const authorizeUrl = new URL(`${config.domain}/oauth2/authorize`);
   authorizeUrl.searchParams.set('client_id', config.clientId);
@@ -153,14 +155,14 @@ export async function exchangeCognitoCodeForTokens(
     throw new Error('Конфігурація Amazon Cognito відсутня або неповна.');
   }
 
-  const expectedState = sessionStorage.getItem(OAUTH_STATE_KEY);
-  const codeVerifier = sessionStorage.getItem(PKCE_VERIFIER_KEY);
-  const returnTo = sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY) || '/';
+  const expectedState = localStorage.getItem(OAUTH_STATE_KEY);
+  const codeVerifier = localStorage.getItem(PKCE_VERIFIER_KEY);
+  const returnTo = localStorage.getItem(POST_LOGIN_REDIRECT_KEY) || '/';
 
   // Clean up one-time PKCE & state values from sessionStorage
-  sessionStorage.removeItem(OAUTH_STATE_KEY);
-  sessionStorage.removeItem(PKCE_VERIFIER_KEY);
-  sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
+  localStorage.removeItem(OAUTH_STATE_KEY);
+  localStorage.removeItem(PKCE_VERIFIER_KEY);
+  localStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
 
   if (!expectedState || !returnedState || expectedState !== returnedState) {
     throw new Error('Помилка перевірки безпеки OAuth (невірний параметр state). Спробуйте увійти ще раз.');
