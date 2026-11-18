@@ -26,6 +26,11 @@ services:
       SECRET_KEY: ucu-sidequest-dev-insecure-secret-key-change-in-prod-2026-minimum-32-chars
       CORS_ORIGINS: '["http://localhost:3000","http://127.0.0.1:3000"]'
       APP_TIMEZONE: Europe/Kyiv
+      AWS_REGION: ${AWS_REGION:-eu-central-1}
+      COGNITO_USER_POOL_ID: ${COGNITO_USER_POOL_ID:-}
+      COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID:-}
+      COGNITO_DOMAIN: ${COGNITO_DOMAIN:-}
+      GOOGLE_SIGNIN_ENABLED: ${GOOGLE_SIGNIN_ENABLED:-false}
     ports:
       - "8000:8000"
     depends_on:
@@ -42,7 +47,14 @@ services:
       dockerfile: Dockerfile
     container_name: sidequest_frontend
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      NEXT_PUBLIC_GOOGLE_SIGNIN_ENABLED: ${NEXT_PUBLIC_GOOGLE_SIGNIN_ENABLED:-false}
+      NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${NEXT_PUBLIC_COGNITO_USER_POOL_ID:-}
+      NEXT_PUBLIC_COGNITO_CLIENT_ID: ${NEXT_PUBLIC_COGNITO_CLIENT_ID:-}
+      NEXT_PUBLIC_COGNITO_DOMAIN: ${NEXT_PUBLIC_COGNITO_DOMAIN:-}
+      NEXT_PUBLIC_COGNITO_REDIRECT_URI: ${NEXT_PUBLIC_COGNITO_REDIRECT_URI:-http://localhost:3000/auth/callback}
+      NEXT_PUBLIC_COGNITO_LOGOUT_URI: ${NEXT_PUBLIC_COGNITO_LOGOUT_URI:-http://localhost:3000/login}
+      NEXT_PUBLIC_COGNITO_SCOPES: ${NEXT_PUBLIC_COGNITO_SCOPES:-openid email profile}
     ports:
       - "3000:3000"
     depends_on:

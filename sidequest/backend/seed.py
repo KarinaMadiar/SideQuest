@@ -3,7 +3,7 @@ import os
 import sys
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, text
 
 # Ensure backend root is in sys.path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -30,6 +30,18 @@ async def seed():
     # Ensure tables exist
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        try:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN cognito_sub VARCHAR(128)"))
+        except Exception:
+            pass
+        try:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN auth_provider VARCHAR(50) NOT NULL DEFAULT 'local'"))
+        except Exception:
+            pass
+        try:
+            await conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_cognito_sub ON users (cognito_sub)"))
+        except Exception:
+            pass
 
     async with AsyncSessionLocal() as db:
         # Check if already seeded to allow idempotent reruns

@@ -81,6 +81,14 @@ export default function ProfilePage() {
               <span className="font-semibold text-brand-800 capitalize">
                 {user.role === 'admin' ? 'Адміністратор' : user.role === 'organizer' ? 'Організатор' : 'Студент'}
               </span>
+              <span>•</span>
+              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-[11px]">
+                {user.auth_provider === 'google'
+                  ? 'Google (Cognito)'
+                  : user.auth_provider === 'cognito'
+                  ? 'Amazon Cognito'
+                  : 'Email / Пароль'}
+              </span>
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
               Зареєстровано: {formatDateKyiv(user.created_at)}

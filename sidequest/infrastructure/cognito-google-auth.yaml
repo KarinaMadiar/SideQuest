@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  UCU SideQuest — Amazon Cognito User Pool, Hosted UI Domain, Google Federated
+  Identity Provider, and Public Web App Client (OAuth 2.0 Authorization Code + PKCE).
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Deployment environment identifier (dev, staging, prod).
+
+  CognitoDomainPrefix:
+    Type: String
+    Default: ucu-sidequest-auth
+    AllowedPattern: '^[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?$'
+    Description: >
+      Globally unique domain prefix for the Amazon Cognito Hosted UI
+      (resulting domain: https://<prefix>.auth.<region>.amazoncognito.com).
+
+  GoogleClientId:
+    Type: String
+    NoEcho: true
+    Description: >
+      Google OAuth 2.0 Web Application Client ID from Google Cloud Console.
+      Pass at deployment time or via AWS Systems Manager Parameter Store / Secrets Manager.
+
+  GoogleClientSecret:
+    Type: String
+    NoEcho: true
+    Description: >
+      Google OAuth 2.0 Web Application Client Secret from Google Cloud Console.
+      Never commit real secrets or expose in frontend NEXT_PUBLIC_* variables.
+
+  LocalCallbackUrl:
+    Type: String
+    Default: http://localhost:3000/auth/callback
+    Description: Local development OAuth 2.0 callback URL for SideQuest frontend.
+
+  ProductionCallbackUrl:
+    Type: String
+    Default: https://sidequest.ucu.edu.ua/auth/callback
+    Description: Production OAuth 2.0 callback URL for SideQuest frontend.
+
+  LocalLogoutUrl:
+    Type: String
+    Default: http://localhost:3000/login
+    Description: Local development sign-out redirect URL.
+
+  ProductionLogoutUrl:
+    Type: String
+    Default: https://sidequest.ucu.edu.ua/login
+    Description: Production sign-out redirect URL.
+
+Resources:
+  SideQuestUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub 'ucu-sidequest-users-${EnvironmentName}'
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: name
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: picture
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+      UserPoolTags:
+        Project: UCU-SideQuest
+        Environment: !Ref EnvironmentName
+
+  SideQuestUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub '${CognitoDomainPrefix}-${EnvironmentName}'
+      UserPoolId: !Ref SideQuestUserPool
+
+  SideQuestGoogleIdentityProvider:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    Properties:
+      UserPoolId: !Ref SideQuestUserPool
+      ProviderName: Google
+      ProviderType: Google
+      ProviderDetails:
+        client_id: !Ref GoogleClientId
+        client_secret: !Ref GoogleClientSecret
+        authorize_scopes: 'openid email profile'
+      AttributeMapping:
+        email: email
+        email_verified: email_verified
+        name: name
+        given_name: given_name
+        family_name: family_name
+        picture: picture
+        username: sub
+
+  SideQuestWebAppClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn:
+      - SideQuestGoogleIdentityProvider
+    Properties:
+      ClientName: !Sub 'ucu-sidequest-web-client-${EnvironmentName}'
+      UserPoolId: !Ref SideQuestUserPool
+      GenerateSecret: false
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+      SupportedIdentityProviders:
+        - COGNITO
+        - Google
+      CallbackURLs:
+        - !Ref LocalCallbackUrl
+        - !Ref ProductionCallbackUrl
+      LogoutURLs:
+        - !Ref LocalLogoutUrl
+        - !Ref ProductionLogoutUrl
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+
+Outputs:
+  CognitoUserPoolId:
+    Description: Amazon Cognito User Pool ID (set as COGNITO_USER_POOL_ID and NEXT_PUBLIC_COGNITO_USER_POOL_ID)
+    Value: !Ref SideQuestUserPool
+
+  CognitoAppClientId:
+    Description: Amazon Cognito Public Web App Client ID (set as COGNITO_CLIENT_ID and NEXT_PUBLIC_COGNITO_CLIENT_ID)
+    Value: !Ref SideQuestWebAppClient
+
+  CognitoHostedUiDomain:
+    Description: Full Amazon Cognito Hosted UI Domain URL (set as COGNITO_DOMAIN and NEXT_PUBLIC_COGNITO_DOMAIN)
+    Value: !Sub 'https://${SideQuestUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'
+
+  CognitoGoogleAuthorizedRedirectUri:
+    Description: >
+      Authorized Redirect URI to configure in Google Cloud Console -> OAuth 2.0 Web Client
+    Value: !Sub 'https://${SideQuestUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com/oauth2/idpresponse'
+
+  CognitoIssuerUrl:
+    Description: Cognito JWT Issuer URL validated by the FastAPI backend
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${SideQuestUserPool}'
+
+  CognitoJwksUrl:
+    Description: Cognito JWKS URL used by the FastAPI backend to verify RS256 access tokens
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${SideQuestUserPool}/.well-known/jwks.json'

@@ -67,6 +67,10 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     const data = await res.json().catch(() => null);
 
     if (!res.ok) {
+      if (res.status === 401 && typeof window !== 'undefined' && endpoint !== '/auth/login') {
+        removeToken();
+        window.dispatchEvent(new CustomEvent('sidequest:unauthorized'));
+      }
       let message = 'Виникла помилка при зверненні до сервера';
       if (data?.detail) {
         message = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
@@ -103,6 +107,18 @@ export const api = {
       });
       setToken(res.access_token);
       return res;
+    },
+    syncCognitoSession: async (cognitoAccessToken: string) => {
+      setToken(cognitoAccessToken);
+      try {
+        const user = await request<User>('/auth/cognito/sync', {
+          method: 'POST',
+        });
+        return user;
+      } catch (err) {
+        removeToken();
+        throw err;
+      }
     },
     logout: async () => {
       try {

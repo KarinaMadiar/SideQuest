@@ -9,6 +9,8 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    cognito_sub: Mapped[str | None] = mapped_column(String(128), unique=True, index=True, nullable=True)
+    auth_provider: Mapped[str] = mapped_column(String(50), default="local", server_default="local", nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)

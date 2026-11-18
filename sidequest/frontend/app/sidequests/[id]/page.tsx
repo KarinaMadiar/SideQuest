@@ -30,6 +30,7 @@ export default function SideQuestDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [confirmMode, setConfirmMode] = useState<'leave' | 'cancel' | null>(null);
   const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const loadSidequest = async () => {
@@ -68,8 +69,8 @@ export default function SideQuestDetailPage() {
   };
 
   const handleLeave = async () => {
-    if (!confirm('Ви впевнені, що хочете покинути цей SideQuest?')) return;
     setActionLoading(true);
+    setConfirmMode(null);
     setActionMsg(null);
     try {
       const updated = await api.sidequests.leave(id);
@@ -83,8 +84,8 @@ export default function SideQuestDetailPage() {
   };
 
   const handleCancel = async () => {
-    if (!confirm('Ви впевнені, що хочете скасувати цей SideQuest? Скасовану активність не можна буде відновити.')) return;
     setActionLoading(true);
+    setConfirmMode(null);
     setActionMsg(null);
     try {
       const updated = await api.sidequests.cancel(id);
@@ -231,10 +232,11 @@ export default function SideQuestDetailPage() {
             )}
           </div>
 
-          <div className="flex items-center gap-3">
-            {canCancel && (
+          <div className="flex flex-wrap items-center gap-3">
+            {canCancel && confirmMode !== 'cancel' && (
               <button
-                onClick={handleCancel}
+                type="button"
+                onClick={() => setConfirmMode('cancel')}
                 disabled={actionLoading}
                 className="px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition disabled:opacity-50 flex items-center gap-1.5"
               >
@@ -243,16 +245,60 @@ export default function SideQuestDetailPage() {
               </button>
             )}
 
+            {confirmMode === 'cancel' && (
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-rose-50 border border-rose-200 text-xs">
+                <span className="text-rose-800 font-semibold">Підтвердити скасування?</span>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={actionLoading}
+                  className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold transition"
+                >
+                  Так, скасувати
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmMode(null)}
+                  className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 font-semibold"
+                >
+                  Ні
+                </button>
+              </div>
+            )}
+
             {sidequest.is_joined ? (
-              <button
-                onClick={handleLeave}
-                disabled={actionLoading}
-                className="px-5 py-2.5 rounded-xl border border-rose-300 text-rose-700 hover:bg-rose-50 font-semibold text-sm transition disabled:opacity-50"
-              >
-                Покинути активність
-              </button>
+              confirmMode === 'leave' ? (
+                <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-50 border border-amber-200 text-xs">
+                  <span className="text-amber-900 font-semibold">Покинути активність?</span>
+                  <button
+                    type="button"
+                    onClick={handleLeave}
+                    disabled={actionLoading}
+                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold transition"
+                  >
+                    Так, вийти
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmMode(null)}
+                    className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 font-semibold"
+                  >
+                    Залишитись
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmMode('leave')}
+                  disabled={actionLoading}
+                  className="px-5 py-2.5 rounded-xl border border-rose-300 text-rose-700 hover:bg-rose-50 font-semibold text-sm transition disabled:opacity-50"
+                >
+                  Покинути активність
+                </button>
+              )
             ) : !isCanceled && !isFull ? (
               <button
+                type="button"
                 onClick={handleJoin}
                 disabled={actionLoading}
                 className="px-6 py-2.5 rounded-xl bg-brand-900 hover:bg-brand-800 text-white font-bold text-sm transition shadow-sm disabled:opacity-50 flex items-center gap-2"

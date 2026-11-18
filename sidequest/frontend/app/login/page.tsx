@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/features/auth/AuthContext';
+import { GoogleSignInButton } from '@/components/google-signin-button';
 import { LogIn, Sparkles, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
@@ -17,6 +18,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setError(null);
     setLoading(true);
 
@@ -31,6 +33,7 @@ export default function LoginPage() {
   };
 
   const handleDemoLogin = async (demoEmail: string, demoPass: string) => {
+    if (loading) return;
     setEmail(demoEmail);
     setPassword(demoPass);
     setError(null);
@@ -61,6 +64,19 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {/* Google / Cognito Federated Sign-In */}
+        <div className="mb-6">
+          <GoogleSignInButton disabled={loading} />
+        </div>
+
+        <div className="relative my-6 flex items-center justify-center">
+          <div className="border-t border-slate-200 w-full" />
+          <span className="bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap">
+            або через пошту та пароль
+          </span>
+          <div className="border-t border-slate-200 w-full" />
+        </div>
+
         {/* Demo Accounts Bar */}
         <div className="mb-6 p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
           <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 mb-2">
@@ -72,7 +88,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => handleDemoLogin('student@ucu.edu.ua', 'StudentPass123!')}
               disabled={loading}
-              className="py-1.5 px-2 bg-white hover:bg-amber-100/70 text-slate-800 border border-amber-300 rounded-lg text-xs font-medium text-center transition shadow-2xs"
+              className="py-1.5 px-2 bg-white hover:bg-amber-100/70 text-slate-800 border border-amber-300 rounded-lg text-xs font-medium text-center transition shadow-2xs disabled:opacity-50"
             >
               🎓 Студент
             </button>
@@ -80,7 +96,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => handleDemoLogin('organizer@ucu.edu.ua', 'OrganizerPass123!')}
               disabled={loading}
-              className="py-1.5 px-2 bg-white hover:bg-amber-100/70 text-slate-800 border border-amber-300 rounded-lg text-xs font-medium text-center transition shadow-2xs"
+              className="py-1.5 px-2 bg-white hover:bg-amber-100/70 text-slate-800 border border-amber-300 rounded-lg text-xs font-medium text-center transition shadow-2xs disabled:opacity-50"
             >
               🏛️ Організатор
             </button>
@@ -88,7 +104,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => handleDemoLogin('admin@ucu.edu.ua', 'AdminPass123!')}
               disabled={loading}
-              className="py-1.5 px-2 bg-white hover:bg-amber-100/70 text-slate-800 border border-amber-300 rounded-lg text-xs font-medium text-center transition shadow-2xs"
+              className="py-1.5 px-2 bg-white hover:bg-amber-100/70 text-slate-800 border border-amber-300 rounded-lg text-xs font-medium text-center transition shadow-2xs disabled:opacity-50"
             >
               🛡️ Адмін
             </button>
@@ -96,7 +112,10 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-700">
+          <div
+            role="alert"
+            className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-700"
+          >
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600" />
             <span>{error}</span>
           </div>
@@ -104,12 +123,17 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label
+              htmlFor="login-email"
+              className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+            >
               Електронна пошта
             </label>
             <input
+              id="login-email"
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="student@ucu.edu.ua"
@@ -118,12 +142,17 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label
+              htmlFor="login-password"
+              className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+            >
               Пароль
             </label>
             <input
+              id="login-password"
               type="password"
               required
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"

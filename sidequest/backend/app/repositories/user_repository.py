@@ -11,6 +11,11 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
+    async def get_by_cognito_sub(db: AsyncSession, cognito_sub: str) -> Optional[User]:
+        result = await db.execute(select(User).where(User.cognito_sub == cognito_sub))
+        return result.scalar_one_or_none()
+
+    @staticmethod
     async def get_by_email(db: AsyncSession, email: str) -> Optional[User]:
         result = await db.execute(select(User).where(User.email == email.lower().strip()))
         return result.scalar_one_or_none()

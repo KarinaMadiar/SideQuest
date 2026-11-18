@@ -19,3 +19,9 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
+
+
+class CognitoExchangeRequest(BaseModel):
+    code: str = Field(..., min_length=1, description="OAuth 2.0 Authorization Code отриманий від Cognito Hosted UI")
+    redirect_uri: str = Field(..., min_length=1, description="Callback URI, використаний під час авторизації")
+    code_verifier: Optional[str] = Field(None, description="PKCE code_verifier для верифікації коду")

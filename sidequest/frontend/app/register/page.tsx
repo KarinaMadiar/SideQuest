@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/features/auth/AuthContext';
+import { GoogleSignInButton } from '@/components/google-signin-button';
 import { UserPlus, AlertCircle } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -19,6 +20,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setError(null);
     setLoading(true);
 
@@ -47,8 +49,24 @@ export default function RegisterPage() {
           </p>
         </div>
 
+        {/* Google / Cognito Federated Sign-In */}
+        <div className="mb-6">
+          <GoogleSignInButton disabled={loading} />
+        </div>
+
+        <div className="relative my-6 flex items-center justify-center">
+          <div className="border-t border-slate-200 w-full" />
+          <span className="bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap">
+            або заповніть анкету
+          </span>
+          <div className="border-t border-slate-200 w-full" />
+        </div>
+
         {error && (
-          <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-700">
+          <div
+            role="alert"
+            className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-700"
+          >
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600" />
             <span>{error}</span>
           </div>
@@ -56,12 +74,18 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              Ім'я та прізвище
+            <label
+              htmlFor="register-name"
+              className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+            >
+              Ім&apos;я та прізвище
             </label>
             <input
+              id="register-name"
               type="text"
               required
+              minLength={2}
+              autoComplete="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Остап Мельник"
@@ -70,12 +94,17 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label
+              htmlFor="register-email"
+              className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+            >
               Електронна пошта УКУ
             </label>
             <input
+              id="register-email"
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="student@ucu.edu.ua"
@@ -84,13 +113,18 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label
+              htmlFor="register-password"
+              className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+            >
               Пароль
             </label>
             <input
+              id="register-password"
               type="password"
               required
               minLength={6}
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Мінімум 6 символів"
@@ -99,12 +133,13 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+            <span className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
               Тип облікового запису
-            </label>
-            <div className="grid grid-cols-2 gap-2">
+            </span>
+            <div className="grid grid-cols-2 gap-2" role="group" aria-label="Тип облікового запису">
               <button
                 type="button"
+                aria-pressed={role === 'student'}
                 onClick={() => setRole('student')}
                 className={`py-2 px-3 rounded-xl border text-xs font-semibold text-center transition ${
                   role === 'student'
@@ -116,6 +151,7 @@ export default function RegisterPage() {
               </button>
               <button
                 type="button"
+                aria-pressed={role === 'organizer'}
                 onClick={() => setRole('organizer')}
                 className={`py-2 px-3 rounded-xl border text-xs font-semibold text-center transition ${
                   role === 'organizer'

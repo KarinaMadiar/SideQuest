@@ -19,6 +19,8 @@ class UserOut(BaseModel):
     email: EmailStr
     name: str
     role: str
+    auth_provider: str = "local"
+    cognito_sub: Optional[str] = None
     avatar_url: Optional[str] = None
     profile_description: Optional[str] = None
     visibility_settings: str

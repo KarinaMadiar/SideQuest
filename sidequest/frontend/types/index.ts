@@ -6,6 +6,8 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  auth_provider?: 'local' | 'google' | 'cognito' | string;
+  cognito_sub?: string | null;
   avatar_url?: string | null;
   profile_description?: string | null;
   visibility_settings: VisibilitySetting;

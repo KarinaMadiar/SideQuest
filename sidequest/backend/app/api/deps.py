@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
+from app.services.auth_service import AuthService
 from app.utils.security import decode_access_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
@@ -27,14 +28,22 @@ async def get_current_user(
             detail="Недійсний або прострочений токен",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user_id = payload.get("sub")
-    if not user_id:
+    sub = payload.get("sub")
+    if not sub:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Недійсні дані токена",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user = await UserRepository.get_by_id(db, user_id)
+
+    if payload.get("token_source") == "cognito":
+        user = await UserRepository.get_by_cognito_sub(db, sub)
+        if not user:
+            # Automatically synchronize / create the SideQuest profile on first authenticated request
+            user = await AuthService.sync_cognito_user(db, token, payload)
+        return user
+
+    user = await UserRepository.get_by_id(db, sub)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -53,10 +62,12 @@ async def get_optional_current_user(
     payload = decode_access_token(token)
     if not payload:
         return None
-    user_id = payload.get("sub")
-    if not user_id:
+    sub = payload.get("sub")
+    if not sub:
         return None
-    return await UserRepository.get_by_id(db, user_id)
+    if payload.get("token_source") == "cognito":
+        return await UserRepository.get_by_cognito_sub(db, sub)
+    return await UserRepository.get_by_id(db, sub)
 
 
 def require_role(roles: List[str]):

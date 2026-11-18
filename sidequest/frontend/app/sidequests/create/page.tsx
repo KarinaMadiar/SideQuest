@@ -36,6 +36,7 @@ export default function CreateSideQuestPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setError(null);
 
     if (!user) {
@@ -115,10 +116,11 @@ export default function CreateSideQuestPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Title */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label htmlFor="sq-title" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
               Назва SideQuest *
             </label>
             <input
+              id="sq-title"
               type="text"
               required
               minLength={3}
@@ -132,10 +134,11 @@ export default function CreateSideQuestPage() {
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label htmlFor="sq-description" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
               Опис активності *
             </label>
             <textarea
+              id="sq-description"
               required
               rows={4}
               minLength={10}
@@ -149,10 +152,11 @@ export default function CreateSideQuestPage() {
           {/* Category & Capacity */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label htmlFor="sq-category" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Категорія *
               </label>
               <select
+                id="sq-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-900 bg-white"
@@ -166,10 +170,11 @@ export default function CreateSideQuestPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label htmlFor="sq-capacity" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Кількість учасників (включно з вами) *
               </label>
               <input
+                id="sq-capacity"
                 type="number"
                 required
                 min={2}
@@ -184,10 +189,11 @@ export default function CreateSideQuestPage() {
 
           {/* Location */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label htmlFor="sq-location" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
               Локація на кампусі або в місті *
             </label>
             <input
+              id="sq-location"
               type="text"
               required
               minLength={2}
@@ -202,10 +208,11 @@ export default function CreateSideQuestPage() {
           {/* Dates */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label htmlFor="sq-starts-at" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Час початку * (Europe/Kyiv)
               </label>
               <input
+                id="sq-starts-at"
                 type="datetime-local"
                 required
                 value={startsAt}
@@ -215,10 +222,11 @@ export default function CreateSideQuestPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Час завершення (необов'язково)
+              <label htmlFor="sq-ends-at" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Час завершення (необов&apos;язково)
               </label>
               <input
+                id="sq-ends-at"
                 type="datetime-local"
                 value={endsAt}
                 onChange={(e) => setEndsAt(e.target.value)}

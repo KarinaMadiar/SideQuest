@@ -1,19 +1,25 @@
 # ⚡ UCU SideQuest
 
-Standalone full-stack MVP web application for the Ukrainian Catholic University (UCU) community.
+Веб-платформа для спільноти Українського Католицького Університету (УКУ) для пошуку компанії на студентські **SideQuests** та перегляду **Подій УКУ** з підтримкою входу за email/паролем та через **Google (Amazon Cognito Hosted UI OAuth 2.0 + PKCE)**.
 
-The complete project is located in the [`sidequest/`](./sidequest/) folder.
+Увесь вихідний код, інфраструктурні шаблони та документація розташовані в директорії [`sidequest/`](./sidequest/).
 
-## Quick Start
+## Швидкий старт
 
 ```bash
 cd sidequest
 
-# Option 1: Run with Docker Compose
+# Варіант 1: Запуск через Docker Compose
 docker compose up --build
 
-# Option 2: Run locally without Docker
-# See sidequest/README.md for step-by-step instructions.
+# Варіант 2: Локальний запуск без Docker (SQLite + Next.js)
+# Див. детальну інструкцію у sidequest/README.md
 ```
 
-Please refer to the comprehensive [sidequest/README.md](./sidequest/README.md) for full architecture details, seed accounts, API documentation, and test verification commands.
+Докладна документація щодо:
+- Архітектури потоку **Google → Amazon Cognito → UCU SideQuest** (OAuth 2.0 Authorization Code + PKCE),
+- Налаштування Google Cloud Console та шаблону CloudFormation [`sidequest/infrastructure/cognito-google-auth.yaml`](./sidequest/infrastructure/cognito-google-auth.yaml),
+- Публічних і секретних змінних середовища ([`sidequest/.env.example`](./sidequest/.env.example)),
+- Демонстраційних акаунтів, запуску тестів та відомих обмежень (зокрема поведінки Account Linking)
+
+міститься у головному файлі документації: **[`sidequest/README.md`](./sidequest/README.md)**.
