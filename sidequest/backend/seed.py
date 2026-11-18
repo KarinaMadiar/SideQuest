@@ -47,7 +47,10 @@ async def seed():
         # Check if already seeded to allow idempotent reruns
         existing_admin = await db.execute(select(User).where(User.email == "admin@ucu.edu.ua"))
         if existing_admin.scalar_one_or_none():
-            print("⚠️ Демо-користувачі вже існують. Очищення старих демо-даних для чистого оновлення...")
+            if os.getenv("FORCE_RESEED", "false").lower() not in ("true", "1", "yes"):
+                print("✅ База даних вже містить демо-акаунти. Пропускаємо перезапис (встановіть FORCE_RESEED=true для примусового очищення).")
+                return
+            print("⚠️ FORCE_RESEED=true: Очищення старих демо-даних для чистого оновлення...")
             await db.execute(delete(EventAttendee))
             await db.execute(delete(Speaker))
             await db.execute(delete(Event))

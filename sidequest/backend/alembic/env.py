@@ -2,7 +2,7 @@ import asyncio
 from logging.config import fileConfig
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.ext.asyncio import create_async_engine
 from alembic import context
 
 import os
@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.config import settings
 from app.models import Base
+from app.database import normalize_async_db_url
 
 config = context.config
 
@@ -21,20 +22,15 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-# Use DATABASE_URL from settings
-db_url = settings.DATABASE_URL
-if db_url.startswith("postgresql://"):
-    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-elif db_url.startswith("sqlite://") and not db_url.startswith("sqlite+aiosqlite://"):
-    db_url = db_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
-
-config.set_main_option("sqlalchemy.url", db_url)
+# Normalize DATABASE_URL for asyncpg / aiosqlite (including sslmode handling)
+db_url, db_connect_args = normalize_async_db_url(settings.DATABASE_URL)
+# Escape '%' for ConfigParser interpolation safety
+config.set_main_option("sqlalchemy.url", db_url.replace("%", "%%"))
 
 
 def run_migrations_offline() -> None:
-    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url,
+        url=db_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -52,10 +48,10 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    connectable = create_async_engine(
+        db_url,
         poolclass=pool.NullPool,
+        connect_args=db_connect_args,
     )
 
     async with connectable.connect() as connection:

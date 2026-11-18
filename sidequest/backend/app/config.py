@@ -1,6 +1,8 @@
+import json
 import os
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
+from typing import List, Union
 
 
 class Settings(BaseSettings):
@@ -27,6 +29,47 @@ class Settings(BaseSettings):
     COGNITO_JWKS_URL: str = os.getenv("COGNITO_JWKS_URL", "")
     GOOGLE_SIGNIN_ENABLED: bool = os.getenv("GOOGLE_SIGNIN_ENABLED", "false").lower() in ("true", "1", "yes")
 
+    # CORS & Public Frontend Domain
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "")
+    CORS_ORIGINS: Union[List[str], str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+    CORS_ALLOW_ORIGIN_REGEX: str = os.getenv(
+        "CORS_ALLOW_ORIGIN_REGEX",
+        r"https://.*\.amplifyapp\.com"
+    )
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, list):
+            return [str(x).strip().rstrip("/") for x in v if str(x).strip()]
+        if isinstance(v, str):
+            raw = v.strip()
+            if not raw:
+                return ["http://localhost:3000", "http://127.0.0.1:3000"]
+            if raw.startswith("["):
+                try:
+                    parsed = json.loads(raw)
+                    if isinstance(parsed, list):
+                        return [str(x).strip().rstrip("/") for x in parsed if str(x).strip()]
+                except Exception:
+                    pass
+            return [item.strip().rstrip("/") for item in raw.split(",") if item.strip()]
+        return ["http://localhost:3000"]
+
+    @property
+    def effective_cors_origins(self) -> List[str]:
+        origins = list(self.CORS_ORIGINS) if isinstance(self.CORS_ORIGINS, list) else [str(self.CORS_ORIGINS)]
+        if self.FRONTEND_URL:
+            cleaned = self.FRONTEND_URL.strip().rstrip("/")
+            if cleaned and cleaned not in origins:
+                origins.append(cleaned)
+        return origins
+
     @property
     def cognito_issuer(self) -> str:
         if not self.COGNITO_USER_POOL_ID or not self.AWS_REGION:
@@ -48,14 +91,6 @@ class Settings(BaseSettings):
             bool(self.COGNITO_USER_POOL_ID and self.COGNITO_USER_POOL_ID not in placeholders)
             and bool(self.COGNITO_CLIENT_ID and self.COGNITO_CLIENT_ID not in placeholders)
         )
-    
-    # CORS
-    CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ]
     
     # Timezone
     APP_TIMEZONE: str = "Europe/Kyiv"

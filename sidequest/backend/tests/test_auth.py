@@ -3,7 +3,25 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, MagicMock, AsyncMock
 from cryptography.hazmat.primitives.asymmetric import rsa
-from app.config import settings
+from app.config import settings, Settings
+from app.database import normalize_async_db_url
+
+
+def test_normalize_async_db_url_and_cors_parsing():
+    # 1. Neon postgres:// with sslmode=require & channel_binding=require
+    raw_neon = "postgres://user:pass@ep-cool-forest-123.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+    norm_url, connect_args = normalize_async_db_url(raw_neon)
+    assert norm_url == "postgresql+asyncpg://user:pass@ep-cool-forest-123.eu-central-1.aws.neon.tech/neondb"
+    assert "ssl" in connect_args
+
+    # 2. Comma-separated CORS_ORIGINS and FRONTEND_URL
+    custom_settings = Settings(
+        CORS_ORIGINS="http://localhost:3000, https://main.d12345.amplifyapp.com/",
+        FRONTEND_URL="https://sidequest.ucu.edu.ua/",
+    )
+    assert "http://localhost:3000" in custom_settings.effective_cors_origins
+    assert "https://main.d12345.amplifyapp.com" in custom_settings.effective_cors_origins
+    assert "https://sidequest.ucu.edu.ua" in custom_settings.effective_cors_origins
 
 
 def _generate_rsa_keypair():
