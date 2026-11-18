@@ -44,23 +44,41 @@ function normalizeDomain(rawDomain: string): string {
   return `https://${trimmed}`;
 }
 
+let runtimeConfigOverride: Partial<CognitoPublicConfig> | null = null;
+
+export function updateCognitoConfig(override: Partial<CognitoPublicConfig>) {
+  runtimeConfigOverride = { ...(runtimeConfigOverride || {}), ...override };
+}
+
 export function getCognitoConfig(): CognitoPublicConfig {
-  const enabledFlag =
+  let enabledFlag =
     (process.env.NEXT_PUBLIC_GOOGLE_SIGNIN_ENABLED || '').toLowerCase() === 'true' ||
     process.env.NEXT_PUBLIC_GOOGLE_SIGNIN_ENABLED === '1';
 
-  const userPoolId = (process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || '').trim();
-  const clientId = (process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || '').trim();
-  const domain = normalizeDomain(process.env.NEXT_PUBLIC_COGNITO_DOMAIN || '');
+  let userPoolId = (process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || '').trim();
+  let clientId = (process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || '').trim();
+  let domain = normalizeDomain(process.env.NEXT_PUBLIC_COGNITO_DOMAIN || '');
 
   const defaultOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-  const redirectUri = (
+  let redirectUri = (
     process.env.NEXT_PUBLIC_COGNITO_REDIRECT_URI || `${defaultOrigin}/auth/callback`
   ).trim();
-  const logoutUri = (
+  let logoutUri = (
     process.env.NEXT_PUBLIC_COGNITO_LOGOUT_URI || `${defaultOrigin}/login`
   ).trim();
-  const scopes = (process.env.NEXT_PUBLIC_COGNITO_SCOPES || 'openid email profile').trim();
+  let scopes = (process.env.NEXT_PUBLIC_COGNITO_SCOPES || 'openid email profile')
+    .trim()
+    .replace(/^["']|["']$/g, '');
+
+  if (runtimeConfigOverride) {
+    if (runtimeConfigOverride.enabled !== undefined) enabledFlag = runtimeConfigOverride.enabled;
+    if (runtimeConfigOverride.userPoolId) userPoolId = runtimeConfigOverride.userPoolId;
+    if (runtimeConfigOverride.clientId) clientId = runtimeConfigOverride.clientId;
+    if (runtimeConfigOverride.domain) domain = normalizeDomain(runtimeConfigOverride.domain);
+    if (runtimeConfigOverride.redirectUri) redirectUri = runtimeConfigOverride.redirectUri;
+    if (runtimeConfigOverride.logoutUri) logoutUri = runtimeConfigOverride.logoutUri;
+    if (runtimeConfigOverride.scopes) scopes = runtimeConfigOverride.scopes.replace(/^["']|["']$/g, '');
+  }
 
   const hasValidPool = Boolean(userPoolId && !PLACEHOLDER_VALUES.has(userPoolId));
   const hasValidClient = Boolean(clientId && !PLACEHOLDER_VALUES.has(clientId));

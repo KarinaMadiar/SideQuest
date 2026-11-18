@@ -5,6 +5,7 @@ import { User } from '@/types';
 import { api, removeToken } from '@/lib/api';
 import {
   getCognitoConfig,
+  updateCognitoConfig,
   startGoogleCognitoSignIn,
   exchangeCognitoCodeForTokens,
   markLocalAuthSession,
@@ -30,7 +31,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [cognitoConfig] = useState<CognitoPublicConfig>(() => getCognitoConfig());
+  const [cognitoConfig, setCognitoConfig] = useState<CognitoPublicConfig>(() => getCognitoConfig());
+
+  // Keep cognito config reactive with backend config if provided
+  useEffect(() => {
+    api.auth
+      .getConfig()
+      .then((cfg) => {
+        if (cfg && cfg.google_signin_enabled && cfg.client_id && cfg.domain) {
+          updateCognitoConfig({
+            enabled: true,
+            userPoolId: cfg.user_pool_id || '',
+            clientId: cfg.client_id,
+            domain: cfg.domain,
+          });
+          setCognitoConfig(getCognitoConfig());
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const refreshUser = useCallback(async () => {
     try {

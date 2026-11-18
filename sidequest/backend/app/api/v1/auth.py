@@ -50,6 +50,9 @@ async def get_auth_config():
         "cognito_configured": settings.is_cognito_configured,
         "google_signin_enabled": settings.GOOGLE_SIGNIN_ENABLED and settings.is_cognito_configured,
         "aws_region": settings.AWS_REGION,
+        "user_pool_id": settings.COGNITO_USER_POOL_ID if settings.GOOGLE_SIGNIN_ENABLED else "",
+        "client_id": settings.COGNITO_CLIENT_ID if settings.GOOGLE_SIGNIN_ENABLED else "",
+        "domain": settings.COGNITO_DOMAIN if settings.GOOGLE_SIGNIN_ENABLED else "",
     }
 
 

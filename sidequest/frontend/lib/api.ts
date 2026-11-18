@@ -92,6 +92,14 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 export const api = {
   // Auth
   auth: {
+    getConfig: () => request<{
+      cognito_configured: boolean;
+      google_signin_enabled: boolean;
+      aws_region: string;
+      user_pool_id?: string;
+      client_id?: string;
+      domain?: string;
+    }>('/auth/config'),
     login: async (credentials: { email: string; password: string }) => {
       const res = await request<{ access_token: string; user: User }>('/auth/login', {
         method: 'POST',
