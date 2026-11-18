@@ -84,3 +84,10 @@ async def root():
         "message": "Ласкаво просимо до API UCU SideQuest!",
         "docs": f"{settings.API_V1_STR}/docs"
     }
+
+
+try:
+    from mangum import Mangum
+    handler = Mangum(app, lifespan="off")
+except ImportError:
+    handler = None
